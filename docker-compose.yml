@@ -5,9 +5,14 @@ services:
     web:
         image: jitsi/web
         restart: ${RESTART_POLICY}
-        ports:
-            - '${HTTP_PORT}:80'
-            - '${HTTPS_PORT}:443'
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.jitsi.rule=Host(`jitsi.tillepille.io`)"
+          - "traefik.http.routers.jitsi.entrypoints=websecure"
+          - "traefik.http.routers.jitsi.tls=true"
+          - "traefik.http.routers.jitsi.tls.certresolver=myresolver"
+          - "traefik.http.middlewares.test-auth.basicauth.users=jitsi:$$apr1$$rGQ4.LAg$$sPF.berxut6StImnXSATK1"
+          - "traefik.http.routers.jitsi.middlewares=test-auth@docker"
         volumes:
             - ${CONFIG}/web:/config
             - ${CONFIG}/web/letsencrypt:/etc/letsencrypt
@@ -39,6 +44,7 @@ services:
             - JIBRI_RECORDER_PASSWORD
             - ENABLE_RECORDING
         networks:
+            traefik:
             meet.jitsi:
                 aliases:
                     - ${XMPP_DOMAIN}
@@ -165,3 +171,6 @@ services:
 # Custom network so all services can communicate using a FQDN
 networks:
     meet.jitsi:
+    traefik:
+      external:
+        name: traefik
